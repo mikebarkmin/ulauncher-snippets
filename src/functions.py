@@ -46,12 +46,17 @@ class Snippet:
     'Hi'
     """
 
-    def __init__(self, name: str, path: str):
+    def __init__(self, name: str, path: str, root_path: str = ""):
         snippet = frontmatter.load(path)
+        icon = snippet.get("icon")
+
+        if icon:
+            self.icon = os.path.join(root_path, icon)
+        else:
+            self.icon = "images/icon.png"
 
         self.variables = snippet.get("vars", {})
         self.name = snippet.get("name", name[:-3])
-        self.icon = snippet.get("icon", "images/icon.png")
         self.path = path
         self.description = snippet.get("description", snippet.content[:40])
 
@@ -152,7 +157,7 @@ def date(expression: str, format: str = "%Y-%m-%d") -> str:
 def get_snippets(path: str, search: str) -> List[Snippet]:
     """
     >>> get_snippets("test-snippets", "react")
-    [react/component, date, Frontmatter Snippet, placeholder, go]
+    [react/component, date, Frontmatter Snippet, placeholder, go, clipboard]
     """
     search_pattern = os.path.join(path, "**", "*.j2")
     logger.info(search_pattern)
@@ -160,7 +165,7 @@ def get_snippets(path: str, search: str) -> List[Snippet]:
     suggestions = fuzzyfinder(search, files)
 
     return [
-        Snippet(name=str(Path(f).relative_to(path)), path=f) for f in suggestions
+        Snippet(name=str(Path(f).relative_to(path)), path=f, root_path=path) for f in suggestions
     ]
 
 
