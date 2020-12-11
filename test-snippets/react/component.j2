@@ -1,5 +1,11 @@
+---
+vars:
+    name:
+        label: "Enter a name"
+---
+
 import React from "react"
 
-const {{ clipboard }} = () => ();
+const {{ vars("name") }} = () => ();
 
-export default {{ clipboard }}
+export default {{ vars("name") }}
