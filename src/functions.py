@@ -12,7 +12,7 @@ import glob
 import dateparser
 import logging
 import frontmatter
-from jinja2 import Template
+from jinja2 import Template, environment
 from pathlib import Path
 from ulauncher.utils.fuzzy_search import get_score
 from typing import List
@@ -22,6 +22,11 @@ from .filters import camelcase, pascalcase, kebabcase, snakecase
 
 
 logger = logging.getLogger(__name__)
+
+environment.DEFAULT_FILTERS["camelcase"] = camelcase
+environment.DEFAULT_FILTERS["pascalcase"] = pascalcase
+environment.DEFAULT_FILTERS["kebabcase"] = kebabcase
+environment.DEFAULT_FILTERS["snakecase"] = snakecase
 
 
 class Snippet:
@@ -72,10 +77,6 @@ class Snippet:
     def render(self, args=[], copy_mode="gtk") -> str:
         snippet = frontmatter.load(self.path)
         template = Template(snippet.content)
-        template.environment.filters["camelcase"] = camelcase
-        template.environment.filters["pascalcase"] = pascalcase
-        template.environment.filters["kebabcase"] = kebabcase
-        template.environment.filters["snakecase"] = snakecase
         return template.render(
             date=date,
             clipboard=output_from_clipboard_xsel if copy_mode == "xsel" else output_from_clipboard_gtk,
