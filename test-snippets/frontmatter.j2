@@ -1,0 +1,17 @@
+---
+name: "Frontmatter Snippet"
+description: "This is a description"
+icon: "test-snippets/test.png"
+vars:
+    name:
+        label: "Name of the component"
+    other_var:
+        label: "With default"
+        default: "Hi"
+---
+
+Here is the content
+
+{{ date("now") }}
+
+{{ vars("other_var") }}

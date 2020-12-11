@@ -1,0 +1,25 @@
+{
+  "name": "Snippets",
+  "required_api_version": "^2.0.0",
+  "description": "Copy snippets to your clipboard",
+  "developer_name": "Mike Barkmin",
+  "icon": "images/icon.png",
+  "options": {
+    "query_debounce": 0.1
+  },
+  "preferences": [
+    {
+      "id": "snippets_keyword",
+      "type": "keyword",
+      "name": "Snippets",
+      "description": "Copy snippets to your clipboard",
+      "default_value": "snip"
+    },
+    {
+      "id": "snippets_path",
+      "type": "input",
+      "name": "Snippets Directory",
+      "default_value": "~/snippets"
+    }
+  ]
+}
