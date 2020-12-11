@@ -3,6 +3,7 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk
 
+import re
 import time
 import random
 import uuid
@@ -44,6 +45,7 @@ class Snippet:
 
     >>> s.get_variable("other_var")
     'Hi'
+
     """
 
     def __init__(self, name: str, path: str, root_path: str = ""):
@@ -88,19 +90,48 @@ class Snippet:
         return self.name
 
 
-def fuzzyfinder(search: str, items: List[str]) -> List[str]:
+def fuzzyfinder(input, collection, accessor=lambda x: x, sort_results=True):
     """
-    >>> fuzzyfinder("hallo", ["hi", "hu", "hallo", "false"])
-    ['hallo', 'false', 'hi', 'hu']
+    Args:
+        input (str): A partial string which is typically entered by a user.
+        collection (iterable): A collection of strings which will be filtered
+                               based on the `input`.
+        accessor (function): If the `collection` is not an iterable of strings,
+                             then use the accessor to fetch the string that
+                             will be used for fuzzy matching.
+        sort_results(bool): The suggestions are sorted by considering the
+                            smallest contiguous match, followed by where the
+                            match is found in the full string. If two suggestions
+                            have the same rank, they are then sorted
+                            alpha-numerically. This parameter controls the
+                            *last tie-breaker-alpha-numeric sorting*. The sorting
+                            based on match length and position will be intact.
+    Returns:
+        suggestions (generator): A generator object that produces a list of
+            suggestions narrowed down from `collection` using the `input`.
+
+
+    >>> list(fuzzyfinder("al", ["hi", "hu", "hallo", "false"]))
+    ['false', 'hallo']
     """
-    scores = []
-    for i in items:
-        score = get_score(search, i)
-        scores.append((score, i))
+    suggestions = []
+    input = str(input) if not isinstance(input, str) else input
+    pat = '.*?'.join(map(re.escape, input))
+    # lookahead regex to manage overlapping matches
+    pat = '(?=({0}))'.format(pat)
+    regex = re.compile(pat, re.IGNORECASE)
+    for item in collection:
+        r = list(regex.finditer(accessor(item)))
+        if r:
+            # find shortest match
+            best = min(r, key=lambda x: len(x.group(1)))
+            suggestions.append(
+                (len(best.group(1)), best.start(), accessor(item), item))
 
-    scores = sorted(scores, key=lambda score: score[0], reverse=True)
-
-    return list(map(lambda score: score[1], scores))
+    if sort_results:
+        return (z[-1] for z in sorted(suggestions))
+    else:
+        return (z[-1] for z in sorted(suggestions, key=lambda x: x[:2]))
 
 
 def random_uuid() -> str:
@@ -157,7 +188,7 @@ def date(expression: str, format: str = "%Y-%m-%d") -> str:
 def get_snippets(path: str, search: str) -> List[Snippet]:
     """
     >>> get_snippets("test-snippets", "react")
-    [react/component, date, Frontmatter Snippet, placeholder, go, clipboard]
+    [react/component]
     """
     search_pattern = os.path.join(path, "**", "*.j2")
     logger.info(search_pattern)
