@@ -107,6 +107,13 @@ For example `{{ clipboard | escape | title }}` will convert the characters &, <,
 
 Here you can find a [list of buitlin filters](https://jinja.palletsprojects.com/en/2.11.x/templates/#list-of-builtin-filters).
 
+Additionally you can use:
+
+* camelcase
+* pascalcase
+* snakecase
+* kebabcase
+
 ### Advance
 
 Snippets are basicly [Jinja2](https://jinja.palletsprojects.com/en/2.11.x/templates/) templates. This means that you can do very fancy stuff. Like conditional snippets or loop. See their documentation for more information.

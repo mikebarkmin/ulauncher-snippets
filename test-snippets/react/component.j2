@@ -6,6 +6,6 @@ vars:
 
 import React from "react"
 
-const {{ vars("name") }} = () => ();
+const {{ vars("name")|pascalcase }} = () => ();
 
-export default {{ vars("name") }}
+export default {{ vars("name")|pascalcase }}

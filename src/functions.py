@@ -18,6 +18,8 @@ from ulauncher.utils.fuzzy_search import get_score
 from typing import List
 from subprocess import Popen, PIPE
 
+from .filters import camelcase, pascalcase, kebabcase, snakecase
+
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +33,11 @@ class Snippet:
     >>> s = Snippet('frontmatter.j2', 'test-snippets/frontmatter.j2')
     >>> s.render()
     'Here is the content\\n\\n2020-12-10\\n\\nHi'
+
+    >>> s = Snippet('component.j2', 'test-snippets/react/component.j2')
+    >>> s.variables["name"]["value"] = "My Component"
+    >>> s.render()
+    'import React from "react"\\n\\nconst MyComponent = () => ();\\n\\nexport default MyComponent'
 
     >>> s = Snippet('frontmatter.j2', 'test-snippets/frontmatter.j2')
     >>> s.next_variable()
@@ -65,6 +72,10 @@ class Snippet:
     def render(self, args=[], copy_mode="gtk") -> str:
         snippet = frontmatter.load(self.path)
         template = Template(snippet.content)
+        template.environment.filters["camelcase"] = camelcase
+        template.environment.filters["pascalcase"] = pascalcase
+        template.environment.filters["kebabcase"] = kebabcase
+        template.environment.filters["snakecase"] = snakecase
         return template.render(
             date=date,
             clipboard=output_from_clipboard_xsel if copy_mode == "xsel" else output_from_clipboard_gtk,
