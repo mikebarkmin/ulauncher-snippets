@@ -15,6 +15,7 @@ from jinja2 import Template
 from pathlib import Path
 from ulauncher.utils.fuzzy_search import get_score
 from typing import List
+from subprocess import Popen, PIPE
 
 
 logger = logging.getLogger(__name__)
@@ -54,12 +55,12 @@ class Snippet:
         self.path = path
         self.description = snippet.get("description", snippet.content[:40])
 
-    def render(self, args=[]) -> str:
+    def render(self, args=[], copy_mode="gtk") -> str:
         snippet = frontmatter.load(self.path)
         template = Template(snippet.content)
         return template.render(
             date=date,
-            clipboard=clipboard,
+            clipboard=output_from_clipboard_xsel if copy_mode == "xsel" else output_from_clipboard_gtk,
             random_int=random_int,
             random_item=random_item,
             random_uuid=random_uuid,
@@ -109,6 +110,30 @@ def random_item(list: List[str]) -> str:
     return random.choice(list)
 
 
+def copy_to_clipboard_xsel(text: str):
+    p = Popen(['xsel', '-bi'], stdin=PIPE)
+    p.communicate(input=text.encode("utf-8"))
+
+
+def output_from_clipboard_xsel():
+    p = Popen(['xsel', '-bo'], stdout=PIPE, universal_newlines=True)
+    out, err = p.communicate()
+
+    if err:
+        return None
+    return out
+
+
+def output_from_clipboard_gtk():
+    clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
+    text = clipboard.wait_for_text()
+
+    if text is not None:
+        return text
+
+    return ""
+
+
 def date(expression: str, format: str = "%Y-%m-%d") -> str:
     """
     >>> date("last year", "%Y")
@@ -121,16 +146,6 @@ def date(expression: str, format: str = "%Y-%m-%d") -> str:
     if dt is not None:
         formatted_dt = dt.strftime(format)
         return formatted_dt
-    return ""
-
-
-def clipboard() -> str:
-    clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
-    text = clipboard.wait_for_text()
-
-    if text is not None:
-        return text
-
     return ""
 
 

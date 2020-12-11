@@ -11,6 +11,12 @@ Before installing, make sure to install all the needed Python packages for your 
 pip3 install --user dateparser jinja2 python-frontmatter
 ```
 
+If you want to use the xsel mode, which runs more reliable on my system you need to install xsel and select copy mode xsel in the extension settings.
+
+```
+sudo apt install xsel
+```
+
 ## Install
 
 Then open Ulauncher preferences window > extensions > add extension and paste the following url:

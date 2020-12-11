@@ -6,9 +6,10 @@ from ulauncher.api.shared.event import ItemEnterEvent
 from ulauncher.api.shared.event import SystemExitEvent
 from ulauncher.api.shared.action.RenderResultListAction import RenderResultListAction
 from ulauncher.api.shared.action.SetUserQueryAction import SetUserQueryAction
+from ulauncher.api.shared.action.HideWindowAction import HideWindowAction
 from ulauncher.api.shared.action.ActionList import ActionList
 
-from src.functions import get_snippets
+from src.functions import get_snippets, copy_to_clipboard_xsel
 from src.items import no_input_item, show_suggestion_items, show_var_input
 
 
@@ -48,9 +49,15 @@ class ItemEnterEventLister(EventListener):
                                next_variable, next_variable.get("default", ""))
             )])
 
-        snippet = extension.snippet.render()
+        copy_mode = extension.preferences["snippets_copy_mode"]
+        snippet = extension.snippet.render(copy_mode=copy_mode)
         extension.reset()
-        return CopyToClipboardAction(snippet)
+
+        if copy_mode == "xsel":
+            copy_to_clipboard_xsel(snippet)
+            return HideWindowAction()
+        else:
+            return CopyToClipboardAction(snippet)
 
 
 class KeywordQueryEventListener(EventListener):

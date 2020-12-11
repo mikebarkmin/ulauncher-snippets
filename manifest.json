@@ -20,6 +20,22 @@
       "type": "input",
       "name": "Snippets Directory",
       "default_value": "~/snippets"
+    },
+    {
+      "id": "snippets_copy_mode",
+      "type": "select",
+      "name": "Snippets Copy Mode",
+      "default_value": "gtk",
+      "options": [
+        {
+          "value": "gtk",
+          "text": "Gtk Mode"
+        },
+        {
+          "value": "xsel",
+          "text": "Xsel Mode"
+        }
+      ]
     }
   ]
 }
