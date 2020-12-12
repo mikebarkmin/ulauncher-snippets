@@ -196,7 +196,7 @@ def convert_clipboard(text: str) -> str:
             out += unquote(line[7:]) + "\n"
         return out[:-1]
 
-    return ""
+    return text
 
 
 def date(expression: str, format: str = "%Y-%m-%d") -> str:
