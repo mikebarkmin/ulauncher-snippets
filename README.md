@@ -22,7 +22,7 @@ sudo apt install xsel
 Then open Ulauncher preferences window > extensions > add extension and paste the following url:
 
 ```
-https://github.com/mikebarkmin/ulauncher-duckduckgo
+https://github.com/mikebarkmin/ulauncher-snippets
 ```
 
 ## Usage
