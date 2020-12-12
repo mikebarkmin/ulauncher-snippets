@@ -119,6 +119,14 @@ Additionally, you can use:
 
 Snippets are basically [Jinja2](https://jinja.palletsprojects.com/en/2.11.x/templates/) templates. This means that you can do very fancy stuff. Like conditional snippets or loop. See their documentation for more information.
 
+## Snippet Repositories
+
+This is a list of public repositories with snippets for inspiration.
+
+- https://github.com/mikebarkmin/ulauncher-snippets-files/
+
+Leave a pull request if you want your snippet repository to be listed.
+
 ## Developer
 
 ### Run Test
