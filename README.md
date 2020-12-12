@@ -19,7 +19,7 @@ sudo apt install xsel
 
 ## Install
 
-Then open Ulauncher preferences window > extensions > add extension and paste the following url:
+Then open Ulauncher preferences window > extensions > add extension and paste the following URL:
 
 ```
 https://github.com/mikebarkmin/ulauncher-snippets
@@ -27,7 +27,7 @@ https://github.com/mikebarkmin/ulauncher-snippets
 
 ## Usage
 
-For your snippets to be loaded place .j2 files in your snippets directory. You can configure the directory in the extension settings. Type `snip` in Ulauncher and select the snippet you want to use.
+For your snippets to be loaded place j2-files in your snippets directory. You can configure the directory in the extension settings. Type `snip` in Ulauncher and select the snippet you want to use.
 
 ## Snippets
 
@@ -56,7 +56,7 @@ Each key of the frontmatter does have a fallback:
 * `name`: Filename (e.g., date.j2 => date)
 * `description`: First 40 characters of your snippet
 * `icon`: The snippets extensions icon
-* `vars`: An empty dictonary
+* `vars`: An empty dictionary
 
 If you define vars for your snippet the user will get inputs for each one and you can you them in your snippet. See below Placeholder -> Variables. To use the default value you need to input `-`.
 
@@ -81,7 +81,7 @@ You can have a date placeholder which will be replaced by a date. The format is 
 ```
 
 * date_expression can be any format supported by [dateparser](https://dateparser.readthedocs.io/en/latest/)
-* date_formate can be any format supported by [strftime](http://strftime.org/)
+* date_format can be any format supported by [strftime](http://strftime.org/)
 
 For example: `{{ date("now", "%Y-%M-%d") }}` => 2020-12-10
 
@@ -101,13 +101,13 @@ You can have a random placeholder which replace by a random value.
 
 ### Filters
 
-Placeholders can be modifed by filters. Filters are separated from the placeholder by a pipe symbol `|` and may have optional arugments in parentheses.
+Placeholders can be modified by filters. Filters are separated from the placeholder by a pipe symbol `|` and may have optional arguments in parentheses.
 
 For example `{{ clipboard | escape | title }}` will convert the characters &, <, >, ‘, and ” in string s to HTML-safe sequences (escape) and will convert it to titlecase.
 
-Here you can find a [list of buitlin filters](https://jinja.palletsprojects.com/en/2.11.x/templates/#list-of-builtin-filters).
+Here you can find a [list of builtin filters](https://jinja.palletsprojects.com/en/2.11.x/templates/#list-of-builtin-filters).
 
-Additionally you can use:
+Additionally, you can use:
 
 * camelcase
 * pascalcase
@@ -116,13 +116,13 @@ Additionally you can use:
 
 ### Advance
 
-Snippets are basicly [Jinja2](https://jinja.palletsprojects.com/en/2.11.x/templates/) templates. This means that you can do very fancy stuff. Like conditional snippets or loop. See their documentation for more information.
+Snippets are basically [Jinja2](https://jinja.palletsprojects.com/en/2.11.x/templates/) templates. This means that you can do very fancy stuff. Like conditional snippets or loop. See their documentation for more information.
 
 ## Developer
 
 ### Run Test
 
-Currently doctest is used for the `functions` module. To run the tests execute the following command:
+Currently, doctest is used for the `functions` module. To run the tests execute the following command:
 
 ```
 python3 src/functions.py
