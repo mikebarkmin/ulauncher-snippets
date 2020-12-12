@@ -14,6 +14,7 @@ import logging
 import frontmatter
 from jinja2 import Template, environment
 from pathlib import Path
+from urllib.parse import unquote
 from ulauncher.utils.fuzzy_search import get_score
 from typing import List
 from subprocess import Popen, PIPE
@@ -27,6 +28,7 @@ environment.DEFAULT_FILTERS["camelcase"] = camelcase
 environment.DEFAULT_FILTERS["pascalcase"] = pascalcase
 environment.DEFAULT_FILTERS["kebabcase"] = kebabcase
 environment.DEFAULT_FILTERS["snakecase"] = snakecase
+environment.DEFAULT_FILTERS["urldecode"] = unquote
 
 
 class Snippet:
@@ -163,21 +165,36 @@ def copy_to_clipboard_xsel(text: str):
     p.communicate(input=text.encode("utf-8"))
 
 
-def output_from_clipboard_xsel():
+def output_from_clipboard_xsel() -> str:
     p = Popen(['xsel', '-bo'], stdout=PIPE, universal_newlines=True)
     out, err = p.communicate()
 
     if err:
-        return None
-    return out
+        return ""
+    return convert_clipboard(out)
 
 
-def output_from_clipboard_gtk():
+def output_from_clipboard_gtk() -> str:
     clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
     text = clipboard.wait_for_text()
 
     if text is not None:
-        return text
+        return convert_clipboard(text)
+
+    return ""
+
+
+def convert_clipboard(text: str) -> str:
+    """
+    >>> convert_clipboard("x-special/nautilus-clipboard\\ncopy\\nfile:///home/root/Screenshot%20on%202020-11-22%2013-22-51.png\\nfile:///home/root/Screenshot%20on%202020-11-20%2020-07-20.png")
+    '/home/root/Screenshot on 2020-11-22 13-22-51.png\\n/home/root/Screenshot on 2020-11-20 20-07-20.png'
+    """
+    if text.startswith("x-special/nautilus-clipboard"):
+        out = ""
+        lines = text.split("\n")
+        for line in lines[2:]:
+            out += unquote(line[7:]) + "\n"
+        return out[:-1]
 
     return ""
 

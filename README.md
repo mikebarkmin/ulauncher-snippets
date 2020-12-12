@@ -109,10 +109,11 @@ Here you can find a [list of builtin filters](https://jinja.palletsprojects.com/
 
 Additionally, you can use:
 
-* camelcase
-* pascalcase
-* snakecase
-* kebabcase
+* camelcase: A title -> aTitle
+* pascalcase: A title -> ATitle
+* snakecase: A title -> a_title
+* kebabcase: A title -> a-title
+* urldecode: Replace %xx escapes with their single-character equivalent (see [urllib](https://docs.python.org/3/library/urllib.parse.html#urllib.parse.unquote))
 
 ### Advance
 
