@@ -119,6 +119,64 @@ Additionally, you can use:
 
 Snippets are basically [Jinja2](https://jinja.palletsprojects.com/en/2.11.x/templates/) templates. This means that you can do very fancy stuff. Like conditional snippets or loop. See their documentation for more information.
 
+#### Custom Filters
+
+Custom filters are just regular Python functions that take the left side of the filter as the first argument and the arguments passed to the filter as extra arguments or keyword arguments. For example:
+
+```python
+def replace_with_symbol(text: str, symbol: str) -> str:
+    return symbol * len(text)
+
+filters = {
+    "replace_with_symbol": replace_with_symbol
+}
+```
+
+```j2
+{{ "Hello"|replace_with_symbol("*") }}
+```
+
+Results in:
+
+```
+*****
+```
+
+#### Custom Globals
+
+You can provide global variables and functions to your snippets by creating a `globals.py` file in your snippets directory. This files needs to have at least one dictionary `globals`. For example:
+
+```python
+import urllib.request
+import json
+
+def get_temperature(long: float, lat: float) -> float:
+    with urllib.request.urlopen("https://my-weather-service.org") as url:
+        data = json.loads(url.read().decode())
+        return f"{data['temp']}"
+
+globals = {
+    "name": "Mike Barkmin"
+    "temperature": get_temperature
+}
+```
+
+```j2
+{{ name }}
+{{ temperature() }} °C
+```
+
+Results in:
+
+```
+Mike Barkmin
+18.5 °C
+```
+
+
+#### Difference between Filters and Globals
+
+I guess in the context of ulauncher-snippets there is no big different between them. There is only a conceptual difference. If you want to dive deeper into the [jinja2 documentation](https://jinja.palletsprojects.com/en/2.11.x/api/#custom-filters) you find that filters can also be passed the current template context or environment. I do not know if this is of interest for this extensions but it is there
 ## Snippet Repositories
 
 This is a list of public repositories with snippets for inspiration.

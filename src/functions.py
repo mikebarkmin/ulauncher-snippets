@@ -1,3 +1,4 @@
+# type: ignore[misc]
 import gi
 
 gi.require_version("Gtk", "3.0")
@@ -12,11 +13,11 @@ import glob
 import dateparser
 import logging
 import frontmatter
-from jinja2 import Template, environment
+from jinja2 import Template, environment, Environment
 from pathlib import Path
 from urllib.parse import unquote
 from ulauncher.utils.fuzzy_search import get_score
-from typing import List
+from typing import List, Dict, Callable
 from subprocess import Popen, PIPE
 
 from .filters import camelcase, pascalcase, kebabcase, snakecase
@@ -33,20 +34,20 @@ environment.DEFAULT_FILTERS["urldecode"] = unquote
 
 class Snippet:
     """
-    >>> s = Snippet('date.j2', 'test-snippets/date.j2')
+    >>> s = Snippet('test-snippets/date.j2', 'test-snippets')
     >>> s.render()
     '[[2020-12-09]] <== <button class="date_button_today">Today</button> ==> [[2020-12-11]]'
 
-    >>> s = Snippet('frontmatter.j2', 'test-snippets/frontmatter.j2')
+    >>> s = Snippet('test-snippets/frontmatter.j2', 'test-snippets')
     >>> s.render()
     'Here is the content\\n\\n2020-12-10\\n\\nHi'
 
-    >>> s = Snippet('component.j2', 'test-snippets/react/component.j2')
+    >>> s = Snippet('test-snippets/react/component.j2', 'test-snippets')
     >>> s.variables["name"]["value"] = "My Component"
     >>> s.render()
     'import React from "react"\\n\\nconst MyComponent = () => ();\\n\\nexport default MyComponent'
 
-    >>> s = Snippet('frontmatter.j2', 'test-snippets/frontmatter.j2')
+    >>> s = Snippet('test-snippets/frontmatter.j2', 'test-snippets')
     >>> s.next_variable()
     {'label': 'Name of the component'}
 
@@ -60,9 +61,17 @@ class Snippet:
     >>> s.get_variable("other_var")
     'Hi'
 
+    >>> s = Snippet('test-snippets/globals.j2', 'test-snippets')
+    >>> s.render()
+    '€\\nMike Barkmin'
+
+    >>> s = Snippet('test-snippets/filters.j2', 'test-snippets')
+    >>> s.render()
+    '*****'
+
     """
 
-    def __init__(self, name: str, path: str, root_path: str = ""):
+    def __init__(self, path: str, root_path: str = ""):
         snippet = frontmatter.load(path)
         icon = snippet.get("icon")
 
@@ -71,21 +80,40 @@ class Snippet:
         else:
             self.icon = "images/icon.png"
 
+        self.globals_path = os.path.join(root_path, "globals.py")
+        self.filters_path = os.path.join(root_path, "filters.py")
         self.variables = snippet.get("vars", {})
-        self.name = snippet.get("name", name[:-3])
+        file_name = str(Path(path).relative_to(root_path))
+        self.name = snippet.get("name", file_name[:-3])
         self.path = path
         self.description = snippet.get("description", snippet.content[:40])
 
     def render(self, args=[], copy_mode="gtk") -> str:
         snippet = frontmatter.load(self.path)
+
+        filters = {}
+        if os.path.exists(self.filters_path):
+            filters = import_file("filters", self.filters_path).filters
+            # filters need to be added before creating a template
+            environment.DEFAULT_FILTERS = {
+                **environment.DEFAULT_FILTERS,
+                **filters
+            }
+
         template = Template(snippet.content)
+
+        globals = {}
+        if os.path.exists(self.globals_path):
+            globals = import_file("globals", self.globals_path).globals
+
         return template.render(
             date=date,
             clipboard=output_from_clipboard_xsel if copy_mode == "xsel" else output_from_clipboard_gtk,
             random_int=random_int,
             random_item=random_item,
             random_uuid=random_uuid,
-            vars=self.get_variable
+            vars=self.get_variable,
+            **globals
         )
 
     def next_variable(self):
@@ -102,6 +130,20 @@ class Snippet:
 
     def __repr__(self):
         return self.name
+
+
+def import_file(full_name, path):
+    """Import a python module from a path. 3.4+ only.
+
+    Does not call sys.modules[full_name] = path
+    """
+    from importlib import util
+
+    spec = util.spec_from_file_location(full_name, path)
+    mod = util.module_from_spec(spec)
+
+    spec.loader.exec_module(mod)
+    return mod
 
 
 def fuzzyfinder(input, collection, accessor=lambda x: x, sort_results=True):
@@ -225,7 +267,7 @@ def get_snippets(path: str, search: str) -> List[Snippet]:
     suggestions = fuzzyfinder(search, files)
 
     return [
-        Snippet(name=str(Path(f).relative_to(path)), path=f, root_path=path) for f in suggestions
+        Snippet(path=f, root_path=path) for f in suggestions
     ]
 
 
