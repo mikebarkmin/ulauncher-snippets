@@ -106,9 +106,15 @@ class Snippet:
         if os.path.exists(self.globals_path):
             globals = import_file("globals", self.globals_path).globals
 
+            clipboard_func = output_from_clipboard_gtk
+            if copy_mode == "xsel":
+                clipboard_func = output_from_clipboard_xsel
+            elif copy_mode == "wl":
+                clipboard_func = output_from_clipboard_wl
+
         return template.render(
             date=date,
-            clipboard=output_from_clipboard_xsel if copy_mode == "xsel" else output_from_clipboard_gtk,
+            clipboard=clipboard_func,
             random_int=random_int,
             random_item=random_item,
             random_uuid=random_uuid,
@@ -206,9 +212,21 @@ def copy_to_clipboard_xsel(text: str):
     p = Popen(['xsel', '-bi'], stdin=PIPE)
     p.communicate(input=text.encode("utf-8"))
 
+def copy_to_clipboard_wl(text: str):
+    p = Popen(['wl-copy'], stdin=PIPE)
+    p.communicate(input=text.encode("utf-8"))
+
 
 def output_from_clipboard_xsel() -> str:
     p = Popen(['xsel', '-bo'], stdout=PIPE, universal_newlines=True)
+    out, err = p.communicate()
+
+    if err:
+        return ""
+    return convert_clipboard(out)
+
+def output_from_clipboard_wl() -> str:
+    p = Popen(['wl-paste'], stdout=PIPE, universal_newlines=True)
     out, err = p.communicate()
 
     if err:

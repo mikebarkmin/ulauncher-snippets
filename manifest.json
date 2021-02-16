@@ -34,6 +34,10 @@
         {
           "value": "xsel",
           "text": "Xsel Mode"
+        },
+        {
+          "value": "wl",
+          "text": "Wayland Clipboard Mode"
         }
       ]
     }

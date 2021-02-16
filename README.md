@@ -17,6 +17,12 @@ If you want to use the xsel mode, which runs more reliable on my system you need
 sudo apt install xsel
 ```
 
+If you want to use the wl mode, which runs more reliable on wayland systems you need to install wl-clipboard and select copy mode wl in the extension settings.
+
+```
+sudo apt install wl-clipboard
+```
+
 ## Install
 
 Then open Ulauncher preferences window > extensions > add extension and paste the following URL:
