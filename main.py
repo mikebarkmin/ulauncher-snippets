@@ -11,7 +11,7 @@ from ulauncher.api.shared.action.HideWindowAction import HideWindowAction
 from ulauncher.api.shared.action.ActionList import ActionList
 from ulauncher.api.shared.item.ExtensionResultItem import ExtensionResultItem
 
-from src.functions import get_snippets, copy_to_clipboard_xsel
+from src.functions import get_snippets, copy_to_clipboard_xsel, copy_to_clipboard_wl
 from src.items import no_input_item, show_suggestion_items, show_var_input
 
 
@@ -63,6 +63,9 @@ class ItemEnterEventLister(EventListener):
 
         if copy_mode == "xsel":
             copy_to_clipboard_xsel(snippet)
+            return HideWindowAction()
+        elif copy_mode == "wl":
+            copy_to_clipboard_wl(snippet)
             return HideWindowAction()
         else:
             return CopyToClipboardAction(snippet)
