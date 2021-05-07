@@ -106,11 +106,11 @@ class Snippet:
         if os.path.exists(self.globals_path):
             globals = import_file("globals", self.globals_path).globals
 
-            clipboard_func = output_from_clipboard_gtk
-            if copy_mode == "xsel":
-                clipboard_func = output_from_clipboard_xsel
-            elif copy_mode == "wl":
-                clipboard_func = output_from_clipboard_wl
+        clipboard_func = output_from_clipboard_gtk
+        if copy_mode == "xsel":
+            clipboard_func = output_from_clipboard_xsel
+        elif copy_mode == "wl":
+            clipboard_func = output_from_clipboard_wl
 
         return template.render(
             date=date,
