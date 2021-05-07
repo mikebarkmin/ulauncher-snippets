@@ -4,10 +4,12 @@ from ulauncher.api.shared.action.CopyToClipboardAction import CopyToClipboardAct
 from ulauncher.api.shared.event import KeywordQueryEvent
 from ulauncher.api.shared.event import ItemEnterEvent
 from ulauncher.api.shared.event import SystemExitEvent
+from ulauncher.api.shared.action.DoNothingAction import DoNothingAction
 from ulauncher.api.shared.action.RenderResultListAction import RenderResultListAction
 from ulauncher.api.shared.action.SetUserQueryAction import SetUserQueryAction
 from ulauncher.api.shared.action.HideWindowAction import HideWindowAction
 from ulauncher.api.shared.action.ActionList import ActionList
+from ulauncher.api.shared.item.ExtensionResultItem import ExtensionResultItem
 
 from src.functions import get_snippets, copy_to_clipboard_xsel
 from src.items import no_input_item, show_suggestion_items, show_var_input
@@ -50,8 +52,14 @@ class ItemEnterEventLister(EventListener):
             )])
 
         copy_mode = extension.preferences["snippets_copy_mode"]
-        snippet = extension.snippet.render(copy_mode=copy_mode)
-        extension.reset()
+        try:
+            snippet = extension.snippet.render(copy_mode=copy_mode)
+        except Exception as e:
+            return RenderResultListAction([
+                ExtensionResultItem(name=str(e), on_enter=DoNothingAction())
+            ])
+        finally:
+            extension.reset()
 
         if copy_mode == "xsel":
             copy_to_clipboard_xsel(snippet)
