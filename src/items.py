@@ -22,7 +22,7 @@ def no_input_item():
 
 
 def show_var_input(snippet, variable, value):
-    value = value.strip()
+    value = str(value).strip()
 
     if value == "-":
         variable["value"] = variable.get("default", "")
