@@ -53,7 +53,7 @@ class ItemEnterEventLister(EventListener):
 
         copy_mode = extension.preferences["snippets_copy_mode"]
         try:
-            snippet = extension.snippet.render(copy_mode=copy_mode)
+            (mimetype, snippet) = extension.snippet.render(copy_mode=copy_mode)
         except Exception as e:
             return RenderResultListAction([
                 ExtensionResultItem(name=str(e), on_enter=DoNothingAction())
@@ -62,10 +62,10 @@ class ItemEnterEventLister(EventListener):
             extension.reset()
 
         if copy_mode == "xsel":
-            copy_to_clipboard_xsel(snippet)
+            copy_to_clipboard_xsel(snippet, mimetype)
             return HideWindowAction()
         elif copy_mode == "wl":
-            copy_to_clipboard_wl(snippet)
+            copy_to_clipboard_wl(snippet, mimetype)
             return HideWindowAction()
         else:
             return CopyToClipboardAction(snippet)
