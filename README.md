@@ -52,6 +52,8 @@ vars:
         default: "NewComponent"
     other_var:
         label: "A var with no default"
+markdown: false
+markdown_extensions: []
 ---
 
 My snippet {{ date('now') }}!
@@ -63,8 +65,22 @@ Each key of the frontmatter does have a fallback:
 * `description`: First 40 characters of your snippet
 * `icon`: The snippets extensions icon
 * `vars`: An empty dictionary
+* `markdown`: Indicates this snippet should render markdown. Disabled by default.
+* `markdown_extensions`: Sets the [Markdown extensions] to use when `markdown` is enabled.
 
 If you define vars for your snippet the user will get inputs for each one and you can you them in your snippet. See below Placeholder -> Variables. To use the default value you need to input `-`.
+
+### Markdown snippets
+
+> **Note:** Markdown snippets only work in `xsel` and `wl` modes.
+
+Normally, snippets are rendered as plain text.
+
+When `markdown: true` is specified, you can write snippets in markdown which will be rendered to HTML (using [Python-Markdown]) before being put on the clipboard.
+This allows rich text snippets in applications that understand HTML clipboard content.
+
+By default, all of the [extra][markdown-extra] extensions as well as the [sane lists][markdown-sane-lists] extension are enabled.
+It's possible to override this by specifying a list of extensions in `markdown_extensions` yourself.
 
 ### Placeholder
 
@@ -198,5 +214,10 @@ Leave a pull request if you want your snippet repository to be listed.
 Currently, doctest is used for the `functions` module. To run the tests execute the following command:
 
 ```
-python3 src/functions.py
+python3 -m src.functions
 ``` 
+
+[Python-Markdown]: https://python-markdown.github.io/
+[Markdown extensions]: https://python-markdown.github.io/extensions/
+[Markdown-extra]: https://python-markdown.github.io/extensions/extra/
+[Markdown-sane-lists]: https://python-markdown.github.io/extensions/sane_lists/

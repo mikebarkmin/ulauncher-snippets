@@ -1,3 +1,9 @@
+import logging
+
+import gi
+gi.require_version('Notify', '0.7')
+from gi.repository import Notify, GdkPixbuf
+
 from ulauncher.api.client.Extension import Extension
 from ulauncher.api.client.EventListener import EventListener
 from ulauncher.api.shared.action.CopyToClipboardAction import CopyToClipboardAction
@@ -13,6 +19,10 @@ from ulauncher.api.shared.item.ExtensionResultItem import ExtensionResultItem
 
 from src.functions import get_snippets, copy_to_clipboard_xsel, copy_to_clipboard_wl
 from src.items import no_input_item, show_suggestion_items, show_var_input
+from src.html_to_text import html_to_text
+
+
+logger = logging.getLogger(__name__)
 
 
 class SnippetsExtension(Extension):
@@ -23,6 +33,8 @@ class SnippetsExtension(Extension):
         self.subscribe(KeywordQueryEvent, KeywordQueryEventListener())
         self.subscribe(ItemEnterEvent, ItemEnterEventLister())
         self.subscribe(SystemExitEvent, SystemExitEventListener())
+
+        Notify.init("ulauncher-snippets")
 
     def reset(self):
         self.snippet = None
@@ -51,24 +63,52 @@ class ItemEnterEventLister(EventListener):
                                next_variable, next_variable.get("default", ""))
             )])
 
-        copy_mode = extension.preferences["snippets_copy_mode"]
         try:
-            snippet = extension.snippet.render(copy_mode=copy_mode)
+            copy_mode = extension.preferences["snippets_copy_mode"]
+            (mimetype, snippet) = extension.snippet.render(copy_mode=copy_mode)
+
+            action = None
+            if copy_mode == "xsel":
+                copy_to_clipboard_xsel(snippet, mimetype)
+                action = HideWindowAction()
+            elif copy_mode == "wl":
+                copy_to_clipboard_wl(snippet, mimetype)
+                action = HideWindowAction()
+            else:
+                action = CopyToClipboardAction(snippet)
+
+            self._notify(extension, snippet, mimetype)
+            return action
         except Exception as e:
+            logger.exception(e)
             return RenderResultListAction([
                 ExtensionResultItem(name=str(e), on_enter=DoNothingAction())
             ])
         finally:
             extension.reset()
 
-        if copy_mode == "xsel":
-            copy_to_clipboard_xsel(snippet)
-            return HideWindowAction()
-        elif copy_mode == "wl":
-            copy_to_clipboard_wl(snippet)
-            return HideWindowAction()
-        else:
-            return CopyToClipboardAction(snippet)
+    def _notify(self, extension, snippet, mimetype):
+        notification_behavior = extension.preferences["notification_behavior"]
+        if notification_behavior == "disabled":
+            return
+
+        notification = Notify.Notification.new("Snippet copied to clipboard")
+        notification.set_urgency(0) # lowest priority
+
+        try:
+            image = GdkPixbuf.Pixbuf.new_from_file(extension.snippet.icon)
+            notification.set_image_from_pixbuf(image)
+        except:
+            logger.exception("Failed to set notification icon")
+
+        if notification_behavior == "no_content":
+            return notification.show()
+
+        if notification_behavior == "with_content":
+            body = html_to_text(snippet) if mimetype == "text/html" else snippet
+            notification.update("Snippet copied to clipboard", body)
+
+        return notification.show()
 
 
 class KeywordQueryEventListener(EventListener):

@@ -13,15 +13,16 @@ import glob
 import dateparser
 import logging
 import frontmatter
+import subprocess
 from jinja2 import Template, environment, Environment
 from pathlib import Path
 from urllib.parse import unquote
 from ulauncher.utils.fuzzy_search import get_score
-from typing import List, Dict, Callable
-from subprocess import Popen, PIPE
+from typing import List, Dict, Callable, NewType
 
 from .filters import camelcase, pascalcase, kebabcase, snakecase
 
+MimeType = NewType('MimeType', str)
 
 logger = logging.getLogger(__name__)
 
@@ -36,16 +37,24 @@ class Snippet:
     """
     >>> s = Snippet('test-snippets/date.j2', 'test-snippets')
     >>> s.render()
-    '[[2020-12-09]] <== <button class="date_button_today">Today</button> ==> [[2020-12-11]]'
+    ('text/plain', '[[2020-12-09]] <== <button class="date_button_today">Today</button> ==> [[2020-12-11]]')
 
     >>> s = Snippet('test-snippets/frontmatter.j2', 'test-snippets')
     >>> s.render()
-    'Here is the content\\n\\n2020-12-10\\n\\nHi'
+    ('text/plain', 'Here is the content\\n\\n2020-12-10\\n\\nHi')
+
+    >>> s = Snippet('test-snippets/markdown.j2', 'test-snippets')
+    >>> s.render()
+    ('text/html', '<p>A snippet with <a href="https://daringfireball.net/projects/markdown/">Markdown</a> in it.</p>')
+
+    >>> s = Snippet('test-snippets/markdown-extensions.j2', 'test-snippets')
+    >>> s.render()
+    ('text/html', '<p>A snippet with <a class="wikilink" href="/Markdown/">Markdown</a> in it.</p>')
 
     >>> s = Snippet('test-snippets/react/component.j2', 'test-snippets')
     >>> s.variables["name"]["value"] = "My Component"
     >>> s.render()
-    'import React from "react"\\n\\nconst MyComponent = () => ();\\n\\nexport default MyComponent'
+    ('text/plain', 'import React from "react"\\n\\nconst MyComponent = () => ();\\n\\nexport default MyComponent')
 
     >>> s = Snippet('test-snippets/frontmatter.j2', 'test-snippets')
     >>> s.next_variable()
@@ -63,12 +72,11 @@ class Snippet:
 
     >>> s = Snippet('test-snippets/globals.j2', 'test-snippets')
     >>> s.render()
-    '€\\nMike Barkmin'
+    ('text/plain', '€\\nMike Barkmin')
 
     >>> s = Snippet('test-snippets/filters.j2', 'test-snippets')
     >>> s.render()
-    '*****'
-
+    ('text/plain', '*****')
     """
 
     def __init__(self, path: str, root_path: str = ""):
@@ -78,7 +86,11 @@ class Snippet:
         if icon:
             self.icon = os.path.join(root_path, icon)
         else:
-            self.icon = "images/icon.png"
+            # Icon is allowed to be relative for ulauncher itself, but breaks with
+            # GdkPixbuf.Pixbuf.new_from_file() used to construct notifications.
+            # Making the path absolute avoids this problem.
+            script_path = os.path.dirname(os.path.abspath(__file__))
+            self.icon =  os.path.join(script_path, "..", "images/icon.png")
 
         self.globals_path = os.path.join(root_path, "globals.py")
         self.filters_path = os.path.join(root_path, "filters.py")
@@ -87,8 +99,10 @@ class Snippet:
         self.name = snippet.get("name", file_name[:-3])
         self.path = path
         self.description = snippet.get("description", snippet.content[:40])
+        self.is_markdown = snippet.get("markdown", False)
+        self.markdown_extensions = snippet.get("markdown_extensions", ["extra", "sane_lists"])
 
-    def render(self, args=[], copy_mode="gtk") -> str:
+    def render(self, args=[], copy_mode="gtk") -> (MimeType, str):
         snippet = frontmatter.load(self.path)
 
         filters = {}
@@ -112,7 +126,7 @@ class Snippet:
         elif copy_mode == "wl":
             clipboard_func = output_from_clipboard_wl
 
-        return template.render(
+        rendered_snippet = template.render(
             date=date,
             clipboard=clipboard_func,
             random_int=random_int,
@@ -121,6 +135,22 @@ class Snippet:
             vars=self.get_variable,
             **globals
         )
+        if self.is_markdown:
+            try:
+                # By importing this conditionally here we can keep this an
+                # optional dependency, only needed for people who want to use
+                # Markdown-rendered snippets.
+                import markdown
+            except ImportError as e:
+                raise Exception("Missing python-markdown package") from e
+            rendered_snippet = markdown.markdown(
+                rendered_snippet,
+                extensions=self.markdown_extensions,
+                output_format="html5"
+            )
+            return ("text/html", rendered_snippet)
+        else:
+            return ("text/plain", rendered_snippet)
 
     def next_variable(self):
         for id, variable in self.variables.items():
@@ -208,17 +238,18 @@ def random_item(list: List[str]) -> str:
     return random.choice(list)
 
 
-def copy_to_clipboard_xsel(text: str):
-    p = Popen(['xsel', '-bi'], stdin=PIPE)
-    p.communicate(input=text.encode("utf-8"))
+def copy_to_clipboard_xsel(text: str, mimetype: MimeType):
+    try:
+        # xsel does not support setting a mimetype, so try to use xclip when available but fall back to xsel.
+        subprocess.run(['xclip', '-target', mimetype, '-selection', 'clipboard'], input=text, encoding='utf-8', check=True)
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        subprocess.run(['xsel', '-bi'], input=text, encoding='utf-8', check=True)
 
-def copy_to_clipboard_wl(text: str):
-    p = Popen(['wl-copy'], stdin=PIPE)
-    p.communicate(input=text.encode("utf-8"))
-
+def copy_to_clipboard_wl(text: str, mimetype: MimeType):
+    subprocess.run(['wl-copy', '--type', mimetype], input=text, encoding='utf-8', check=True)
 
 def output_from_clipboard_xsel() -> str:
-    p = Popen(['xsel', '-bo'], stdout=PIPE, universal_newlines=True)
+    p = subprocess.Popen(['xsel', '-bo'], stdout=PIPE, universal_newlines=True)
     out, err = p.communicate()
 
     if err:
@@ -226,7 +257,7 @@ def output_from_clipboard_xsel() -> str:
     return convert_clipboard(out)
 
 def output_from_clipboard_wl() -> str:
-    p = Popen(['wl-paste'], stdout=PIPE, universal_newlines=True)
+    p = subprocess.Popen(['wl-paste'], stdout=PIPE, universal_newlines=True)
     out, err = p.communicate()
 
     if err:

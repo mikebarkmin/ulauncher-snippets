@@ -40,6 +40,26 @@
           "text": "Wayland Clipboard Mode"
         }
       ]
+    },
+    {
+      "id": "notification_behavior",
+      "type": "select",
+      "name": "Desktop notifications",
+      "default_value": "disabled",
+      "options": [
+        {
+          "value": "disabled",
+          "text": "Don't send notifications"
+        },
+        {
+          "value": "no_content",
+          "text": "Notify without snippet content"
+        },
+        {
+          "value": "with_content",
+          "text": "Notify with snippet content"
+        }
+      ]
     }
   ]
 }
