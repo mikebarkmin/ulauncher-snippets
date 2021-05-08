@@ -214,7 +214,7 @@ Leave a pull request if you want your snippet repository to be listed.
 Currently, doctest is used for the `functions` module. To run the tests execute the following command:
 
 ```
-python3 src/functions.py
+python3 -m src.functions
 ``` 
 
 [Python-Markdown]: https://python-markdown.github.io/
