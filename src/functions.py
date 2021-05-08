@@ -86,7 +86,11 @@ class Snippet:
         if icon:
             self.icon = os.path.join(root_path, icon)
         else:
-            self.icon = "images/icon.png"
+            # Icon is allowed to be relative for ulauncher itself, but breaks with
+            # GdkPixbuf.Pixbuf.new_from_file() used to construct notifications.
+            # Making the path absolute avoids this problem.
+            script_path = os.path.dirname(os.path.abspath(__file__))
+            self.icon =  os.path.join(script_path, "..", "images/icon.png")
 
         self.globals_path = os.path.join(root_path, "globals.py")
         self.filters_path = os.path.join(root_path, "filters.py")
