@@ -249,7 +249,7 @@ def copy_to_clipboard_wl(text: str, mimetype: MimeType):
     subprocess.run(['wl-copy', '--type', mimetype], input=text, encoding='utf-8', check=True)
 
 def output_from_clipboard_xsel() -> str:
-    p = subprocess.Popen(['xsel', '-bo'], stdout=PIPE, universal_newlines=True)
+    p = subprocess.Popen(['xsel', '-bo'], stdout=subprocess.PIPE, universal_newlines=True)
     out, err = p.communicate()
 
     if err:
@@ -257,7 +257,7 @@ def output_from_clipboard_xsel() -> str:
     return convert_clipboard(out)
 
 def output_from_clipboard_wl() -> str:
-    p = subprocess.Popen(['wl-paste'], stdout=PIPE, universal_newlines=True)
+    p = subprocess.Popen(['wl-paste'], stdout=subprocess.PIPE, universal_newlines=True)
     out, err = p.communicate()
 
     if err:
