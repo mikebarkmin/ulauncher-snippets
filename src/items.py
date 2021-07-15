@@ -59,5 +59,5 @@ def show_suggestion_items(suggestions: List[Snippet]):
                 "snippet": suggestion
             }, keep_app_open=True),
         )
-        for suggestion in suggestions
+        for suggestion in suggestions[:8]
     ]
