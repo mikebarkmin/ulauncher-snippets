@@ -8,7 +8,7 @@ This Ulauncher extension enables you to copy snippets to your clipboard.
 
 Before installing, make sure to install all the needed Python packages for your system:
 ```
-pip3 install --user dateparser jinja2 python-frontmatter
+pip3 install --user dateparser jinja2 python-frontmatter markdown
 ```
 
 If you want to use the xsel mode, which runs more reliable on my system you need to install xsel and select copy mode xsel in the extension settings.
@@ -65,6 +65,7 @@ Each key of the frontmatter does have a fallback:
 * `description`: First 40 characters of your snippet
 * `icon`: The snippets extensions icon
 * `vars`: An empty dictionary
+* `file_path_template`: A jinja2 template for a file path. If this is present the snippet will not be copied to your clipboard, but will be written to the file path.
 * `markdown`: Indicates this snippet should render markdown. Disabled by default.
 * `markdown_extensions`: Sets the [Markdown extensions] to use when `markdown` is enabled.
 

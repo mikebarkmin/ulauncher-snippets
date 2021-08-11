@@ -22,7 +22,7 @@ from typing import List, Dict, Callable, NewType
 
 from .filters import camelcase, pascalcase, kebabcase, snakecase
 
-MimeType = NewType('MimeType', str)
+MimeType = NewType("MimeType", str)
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +46,11 @@ class Snippet:
     >>> s = Snippet('test-snippets/markdown.j2', 'test-snippets')
     >>> s.render()
     ('text/html', '<p>A snippet with <a href="https://daringfireball.net/projects/markdown/">Markdown</a> in it.</p>')
+
+    >>> s = Snippet('test-snippets/copy-to-path.j2', 'test-snippets')
+    >>> s.variables["name"]["value"] = "test"
+    >>> s.render_to_file_path()
+    '~/test.ulauncher-snippets.test.md'
 
     >>> s = Snippet('test-snippets/markdown-extensions.j2', 'test-snippets')
     >>> s.render()
@@ -90,7 +95,7 @@ class Snippet:
             # GdkPixbuf.Pixbuf.new_from_file() used to construct notifications.
             # Making the path absolute avoids this problem.
             script_path = os.path.dirname(os.path.abspath(__file__))
-            self.icon =  os.path.join(script_path, "..", "images/icon.png")
+            self.icon = os.path.join(script_path, "..", "images/icon.png")
 
         self.globals_path = os.path.join(root_path, "globals.py")
         self.filters_path = os.path.join(root_path, "filters.py")
@@ -100,21 +105,27 @@ class Snippet:
         self.path = path
         self.description = snippet.get("description", snippet.content[:40])
         self.is_markdown = snippet.get("markdown", False)
-        self.markdown_extensions = snippet.get("markdown_extensions", ["extra", "sane_lists"])
+        self.file_path_template = snippet.get("file_path_template")
+        self.markdown_extensions = snippet.get(
+            "markdown_extensions", ["extra", "sane_lists"]
+        )
 
-    def render(self, args=[], copy_mode="gtk") -> (MimeType, str):
-        snippet = frontmatter.load(self.path)
+    def render_to_file_path(self, args=[], copy_mode="gtk"):
+        file_path = self._render(self.file_path_template, args, copy_mode)
+        (mime_type, content) = self.render(args, copy_mode)
+        with open(os.path.expanduser(file_path), "w+") as f:
+            f.write(content)
 
+        return file_path
+
+    def _render(self, template_str: str, args=[], copy_mode="gtk"):
         filters = {}
         if os.path.exists(self.filters_path):
             filters = import_file("filters", self.filters_path).filters
             # filters need to be added before creating a template
-            environment.DEFAULT_FILTERS = {
-                **environment.DEFAULT_FILTERS,
-                **filters
-            }
+            environment.DEFAULT_FILTERS = {**environment.DEFAULT_FILTERS, **filters}
 
-        template = Template(snippet.content)
+        template = Template(template_str)
 
         globals = {}
         if os.path.exists(self.globals_path):
@@ -135,6 +146,14 @@ class Snippet:
             vars=self.get_variable,
             **globals
         )
+
+        return rendered_snippet
+
+    def render(self, args=[], copy_mode="gtk") -> (MimeType, str):
+        snippet = frontmatter.load(self.path)
+
+        rendered_snippet = self._render(snippet.content, args, copy_mode)
+
         if self.is_markdown:
             try:
                 # By importing this conditionally here we can keep this an
@@ -146,7 +165,7 @@ class Snippet:
             rendered_snippet = markdown.markdown(
                 rendered_snippet,
                 extensions=self.markdown_extensions,
-                output_format="html5"
+                output_format="html5",
             )
             return ("text/html", rendered_snippet)
         else:
@@ -208,17 +227,16 @@ def fuzzyfinder(input, collection, accessor=lambda x: x, sort_results=True):
     """
     suggestions = []
     input = str(input) if not isinstance(input, str) else input
-    pat = '.*?'.join(map(re.escape, input))
+    pat = ".*?".join(map(re.escape, input))
     # lookahead regex to manage overlapping matches
-    pat = '(?=({0}))'.format(pat)
+    pat = "(?=({0}))".format(pat)
     regex = re.compile(pat, re.IGNORECASE)
     for item in collection:
         r = list(regex.finditer(accessor(item)))
         if r:
             # find shortest match
             best = min(r, key=lambda x: len(x.group(1)))
-            suggestions.append(
-                (len(best.group(1)), best.start(), accessor(item), item))
+            suggestions.append((len(best.group(1)), best.start(), accessor(item), item))
 
     if sort_results:
         return (z[-1] for z in sorted(suggestions))
@@ -241,23 +259,35 @@ def random_item(list: List[str]) -> str:
 def copy_to_clipboard_xsel(text: str, mimetype: MimeType):
     try:
         # xsel does not support setting a mimetype, so try to use xclip when available but fall back to xsel.
-        subprocess.run(['xclip', '-target', mimetype, '-selection', 'clipboard'], input=text, encoding='utf-8', check=True)
+        subprocess.run(
+            ["xclip", "-target", mimetype, "-selection", "clipboard"],
+            input=text,
+            encoding="utf-8",
+            check=True,
+        )
     except (FileNotFoundError, subprocess.CalledProcessError):
-        subprocess.run(['xsel', '-bi'], input=text, encoding='utf-8', check=True)
+        subprocess.run(["xsel", "-bi"], input=text, encoding="utf-8", check=True)
+
 
 def copy_to_clipboard_wl(text: str, mimetype: MimeType):
-    subprocess.run(['wl-copy', '--type', mimetype], input=text, encoding='utf-8', check=True)
+    subprocess.run(
+        ["wl-copy", "--type", mimetype], input=text, encoding="utf-8", check=True
+    )
+
 
 def output_from_clipboard_xsel() -> str:
-    p = subprocess.Popen(['xsel', '-bo'], stdout=subprocess.PIPE, universal_newlines=True)
+    p = subprocess.Popen(
+        ["xsel", "-bo"], stdout=subprocess.PIPE, universal_newlines=True
+    )
     out, err = p.communicate()
 
     if err:
         return ""
     return convert_clipboard(out)
 
+
 def output_from_clipboard_wl() -> str:
-    p = subprocess.Popen(['wl-paste'], stdout=subprocess.PIPE, universal_newlines=True)
+    p = subprocess.Popen(["wl-paste"], stdout=subprocess.PIPE, universal_newlines=True)
     out, err = p.communicate()
 
     if err:
@@ -315,14 +345,13 @@ def get_snippets(path: str, search: str) -> List[Snippet]:
     files = glob.glob(search_pattern, recursive=True)
     suggestions = fuzzyfinder(search, files)
 
-    return [
-        Snippet(path=f, root_path=path) for f in suggestions
-    ]
+    return [Snippet(path=f, root_path=path) for f in suggestions]
 
 
 if __name__ == "__main__":
     import doctest
     from freezegun import freeze_time
+
     freezer = freeze_time("2020-12-10 12:00:01")
     freezer.start()
     doctest.testmod()

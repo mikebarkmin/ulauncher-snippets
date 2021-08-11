@@ -65,20 +65,25 @@ class ItemEnterEventLister(EventListener):
 
         try:
             copy_mode = extension.preferences["snippets_copy_mode"]
-            (mimetype, snippet) = extension.snippet.render(copy_mode=copy_mode)
-
-            action = None
-            if copy_mode == "xsel":
-                copy_to_clipboard_xsel(snippet, mimetype)
-                action = HideWindowAction()
-            elif copy_mode == "wl":
-                copy_to_clipboard_wl(snippet, mimetype)
-                action = HideWindowAction()
+            if extension.snippet.file_path_template:
+                file_path = extension.snippet.render_to_file_path(copy_mode=copy_mode)
+                self._notify(extension, file_path)
+                return HideWindowAction()
             else:
-                action = CopyToClipboardAction(snippet)
+                (mimetype, snippet) = extension.snippet.render(copy_mode=copy_mode)
 
-            self._notify(extension, snippet, mimetype)
-            return action
+                action = None
+                if copy_mode == "xsel":
+                    copy_to_clipboard_xsel(snippet, mimetype)
+                    action = HideWindowAction()
+                elif copy_mode == "wl":
+                    copy_to_clipboard_wl(snippet, mimetype)
+                    action = HideWindowAction()
+                else:
+                    action = CopyToClipboardAction(snippet)
+
+                self._notify(extension, snippet, mimetype)
+                return action
         except Exception as e:
             logger.exception(e)
             return RenderResultListAction([
@@ -119,7 +124,8 @@ class KeywordQueryEventListener(EventListener):
         if extension.state == "select":
             return RenderResultListAction(
                 show_suggestion_items(
-                    get_snippets(path, search))
+                    get_snippets(path, search)),
+                    extension.preferneces.get("number_of_results", 8)
             )
         elif extension.state == "var":
             return RenderResultListAction(

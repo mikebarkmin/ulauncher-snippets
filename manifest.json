@@ -22,6 +22,12 @@
       "default_value": "~/snippets"
     },
     {
+      "id": "number_of_results",
+      "type": "input",
+      "name": "Number of results",
+      "default_value": 8
+    },
+    {
       "id": "snippets_copy_mode",
       "type": "select",
       "name": "Snippets Copy Mode",

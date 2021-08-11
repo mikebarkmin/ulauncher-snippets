@@ -44,7 +44,7 @@ def show_var_input(snippet, variable, value):
     ]
 
 
-def show_suggestion_items(suggestions: List[Snippet]):
+def show_suggestion_items(suggestions: List[Snippet], limit = 8):
 
     if len(suggestions) == 0:
         return no_input_item()
@@ -59,5 +59,5 @@ def show_suggestion_items(suggestions: List[Snippet]):
                 "snippet": suggestion
             }, keep_app_open=True),
         )
-        for suggestion in suggestions
+        for suggestion in suggestions[:limit]
     ]
