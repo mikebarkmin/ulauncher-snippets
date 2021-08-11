@@ -106,15 +106,20 @@ class Snippet:
         self.description = snippet.get("description", snippet.content[:40])
         self.is_markdown = snippet.get("markdown", False)
         self.file_path_template = snippet.get("file_path_template")
+        self.file_overwrite = snippet.get("file_overwrite", False)
         self.markdown_extensions = snippet.get(
             "markdown_extensions", ["extra", "sane_lists"]
         )
 
     def render_to_file_path(self, args=[], copy_mode="gtk"):
         file_path = self._render(self.file_path_template, args, copy_mode)
+        file_path = os.path.expanduser(file_path)
         (mime_type, content) = self.render(args, copy_mode)
-        with open(os.path.expanduser(file_path), "w+") as f:
-            f.write(content)
+        if not os.path.exists(file_path):
+            with open(file_path, "w+") as f:
+                f.write(content)
+        else:
+            raise FileExistsError(file_path)
 
         return file_path
 
@@ -340,6 +345,7 @@ def get_snippets(path: str, search: str) -> List[Snippet]:
     >>> get_snippets("test-snippets", "react")
     [react/component]
     """
+    path = os.path.expanduser(path)
     search_pattern = os.path.join(path, "**", "*.j2")
     logger.info(search_pattern)
     files = glob.glob(search_pattern, recursive=True)

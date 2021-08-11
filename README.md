@@ -66,6 +66,7 @@ Each key of the frontmatter does have a fallback:
 * `icon`: The snippets extensions icon
 * `vars`: An empty dictionary
 * `file_path_template`: A jinja2 template for a file path. If this is present the snippet will not be copied to your clipboard, but will be written to the file path.
+* `file_overwrite`: If true the file will be overwritten. Is false by default.
 * `markdown`: Indicates this snippet should render markdown. Disabled by default.
 * `markdown_extensions`: Sets the [Markdown extensions] to use when `markdown` is enabled.
 

@@ -66,8 +66,11 @@ class ItemEnterEventLister(EventListener):
         try:
             copy_mode = extension.preferences["snippets_copy_mode"]
             if extension.snippet.file_path_template:
-                file_path = extension.snippet.render_to_file_path(copy_mode=copy_mode)
-                self._notify(extension, file_path)
+                try:
+                    file_path = extension.snippet.render_to_file_path(copy_mode=copy_mode)
+                    self._notify(extension, file_path, title = "Snippet written to file")
+                except FileExistsError as e:
+                    self._notify(extension, e.args[0], title = "File already exists")
                 return HideWindowAction()
             else:
                 (mimetype, snippet) = extension.snippet.render(copy_mode=copy_mode)
@@ -92,12 +95,12 @@ class ItemEnterEventLister(EventListener):
         finally:
             extension.reset()
 
-    def _notify(self, extension, snippet, mimetype):
+    def _notify(self, extension, snippet, mimetype = "text/plain", title = "Snippet copied to clipboard"):
         notification_behavior = extension.preferences["notification_behavior"]
         if notification_behavior == "disabled":
             return
 
-        notification = Notify.Notification.new("Snippet copied to clipboard")
+        notification = Notify.Notification.new(title)
         notification.set_urgency(0) # lowest priority
 
         try:
@@ -106,12 +109,9 @@ class ItemEnterEventLister(EventListener):
         except:
             logger.exception("Failed to set notification icon")
 
-        if notification_behavior == "no_content":
-            return notification.show()
-
         if notification_behavior == "with_content":
             body = html_to_text(snippet) if mimetype == "text/html" else snippet
-            notification.update("Snippet copied to clipboard", body)
+            notification.update(title, body)
 
         return notification.show()
 
@@ -124,8 +124,9 @@ class KeywordQueryEventListener(EventListener):
         if extension.state == "select":
             return RenderResultListAction(
                 show_suggestion_items(
-                    get_snippets(path, search)),
-                    extension.preferneces.get("number_of_results", 8)
+                    get_snippets(path, search),
+                    int(extension.preferences.get("number_of_results", 8))
+                    ),
             )
         elif extension.state == "var":
             return RenderResultListAction(
