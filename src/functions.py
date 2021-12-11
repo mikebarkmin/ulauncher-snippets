@@ -206,29 +206,29 @@ def import_file(full_name, path):
     return mod
 
 
-def get_name_from_path(path: str, exclude_ext=True) -> str:
+def get_name_from_path(path: str, exclude_ext=True, root_path="") -> str:
     """
-    >>> get_name_from_path("~/home/test/bla/hallo.md")
-    'hallo'
+    >>> get_name_from_path("~/home/test/bla/hallo.md", root_path="~/home/test")
+    'bla/hallo'
 
-    >>> get_name_from_path("~/home/Google Drive/Brain 1.0", False)
+    >>> get_name_from_path("~/home/Google Drive/Brain 1.0", False, root_path="~/home/Google Drive")
     'Brain 1.0'
     """
-    base = os.path.basename(path)
+    base = os.path.relpath(path, root_path)
     if exclude_ext:
         split = os.path.splitext(base)
         return split[0]
     return base
 
 
-def fuzzyfinder(search: str, items: List[str]) -> List[str]:
+def fuzzyfinder(search: str, items: List[str], root_path: str) -> List[str]:
     """
     >>> fuzzyfinder("hallo", ["hi", "hu", "hallo", "false"])
     ['hallo', 'false', 'hi', 'hu']
     """
     scores = []
     for i in items:
-        score = get_score(search, i)
+        score = get_score(search, get_name_from_path(i, root_path=root_path))
         scores.append((score, i))
 
     scores = sorted(scores, key=lambda score: score[0], reverse=True)
@@ -336,9 +336,16 @@ def get_snippets(path: str, search: str) -> List[Snippet]:
     search_pattern = os.path.join(path, "**", "*.j2")
     logger.info(search_pattern)
     files = glob.glob(search_pattern, recursive=True)
-    suggestions = fuzzyfinder(search, files)
+    suggestions = fuzzyfinder(search, files, path)
 
-    return [Snippet(path=f, root_path=path) for f in suggestions]
+    snippets = []
+    for f in suggestions:
+        try:
+            s = Snippet(path=f, root_path=path)
+            snippets.append(s)
+        except:
+            continue
+    return snippets
 
 
 if __name__ == "__main__":
