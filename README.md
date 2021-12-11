@@ -8,7 +8,7 @@ This Ulauncher extension enables you to copy snippets to your clipboard.
 
 Before installing, make sure to install all the needed Python packages for your system:
 ```
-pip3 install --user dateparser jinja2 python-frontmatter markdown dotenv
+pip3 install --user dateparser jinja2 python-frontmatter markdown python-dotenv
 ```
 
 If you want to use the xsel mode, which runs more reliable on my system you need to install xsel and select copy mode xsel in the extension settings.
