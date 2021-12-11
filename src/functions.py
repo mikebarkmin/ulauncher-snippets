@@ -206,6 +206,21 @@ def import_file(full_name, path):
     return mod
 
 
+def get_name_from_path(path: str, exclude_ext=True) -> str:
+    """
+    >>> get_name_from_path("~/home/test/bla/hallo.md")
+    'hallo'
+
+    >>> get_name_from_path("~/home/Google Drive/Brain 1.0", False)
+    'Brain 1.0'
+    """
+    base = os.path.basename(path)
+    if exclude_ext:
+        split = os.path.splitext(base)
+        return split[0]
+    return base
+
+
 def fuzzyfinder(search: str, items: List[str]) -> List[str]:
     """
     >>> fuzzyfinder("hallo", ["hi", "hu", "hallo", "false"])
@@ -213,7 +228,7 @@ def fuzzyfinder(search: str, items: List[str]) -> List[str]:
     """
     scores = []
     for i in items:
-        score = get_score(search, get_name_from_path(i))
+        score = get_score(search, i)
         scores.append((score, i))
 
     scores = sorted(scores, key=lambda score: score[0], reverse=True)
